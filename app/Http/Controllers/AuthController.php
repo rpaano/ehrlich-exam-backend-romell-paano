@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['only' => ['login', 'refresh']]);
+        $this->middleware('auth:api', ['only' => ['login', 'refresh', 'logout']]);
     }
 
     public function login(Request $request): \Illuminate\Http\JsonResponse

@@ -63,6 +63,7 @@ class AuthController extends Controller
                 'email' => $githubUser->email,
                 'github_token' => $githubUser->token,
                 'github_refresh_token' => $githubUser->refreshToken,
+                'github_url' => $githubUser->user['html_url'],
             ]);
 
         $token = Auth::login($user);

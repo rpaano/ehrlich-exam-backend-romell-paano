@@ -86,6 +86,8 @@ class AuthController extends Controller
         $token = Auth::login($user);
 
         return response()
-            ->redirectTo(config('app.frontend_url').'/auth/login?token='. $token . '&type=bearer');
+            ->redirectTo(
+                config('app.frontend_url').'/auth/login?token='. $token . '&type=bearer' . '&email=' . $user->email
+            );
     }
 }

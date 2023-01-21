@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login','register']]);
+        $this->middleware('auth:api', ['only' => ['login', 'refresh']]);
     }
 
     public function login(Request $request): \Illuminate\Http\JsonResponse
@@ -42,33 +42,6 @@ class AuthController extends Controller
 
     }
 
-    public function register(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
-        ]);
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $token = Auth::login($user);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'User created successfully',
-            'user' => $user,
-            'authorisation' => [
-                'token' => $token,
-                'type' => 'bearer',
-            ]
-        ]);
-    }
-
     public function logout(): \Illuminate\Http\JsonResponse
     {
         Auth::logout();
@@ -88,5 +61,31 @@ class AuthController extends Controller
                 'type' => 'bearer',
             ]
         ]);
+    }
+
+    public function redirect(): \Symfony\Component\HttpFoundation\RedirectResponse|\Illuminate\Http\RedirectResponse
+    {
+        return Socialite::driver('github')->redirect();
+    }
+
+
+    public function callback(): \Illuminate\Http\RedirectResponse
+    {
+        $githubUser = Socialite::driver('github')->stateless()->user();
+
+        $user = User::query()
+            ->updateOrCreate([
+                'github_id' => $githubUser->id,
+            ], [
+                'name' => $githubUser->name,
+                'email' => $githubUser->email,
+                'github_token' => $githubUser->token,
+                'github_refresh_token' => $githubUser->refreshToken,
+            ]);
+
+        $token = Auth::login($user);
+
+        return response()
+            ->redirectTo(config('app.frontend_url').'/auth/login?token='. $token . '&type=bearer');
     }
 }
